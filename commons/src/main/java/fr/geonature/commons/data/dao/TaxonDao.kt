@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.room.Dao
 import androidx.room.Query
+import androidx.room.RoomWarnings
 import androidx.sqlite.db.SimpleSQLiteQuery
 import fr.geonature.commons.data.entity.AbstractTaxon
 import fr.geonature.commons.data.entity.AbstractTaxon.Companion.COLUMN_DESCRIPTION
@@ -66,6 +67,7 @@ abstract class TaxonDao : BaseDao<Taxon>() {
             WHERE t.${AbstractTaxon.COLUMN_ID} = :taxonId
         """
     )
+    @Suppress(RoomWarnings.UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE)
     abstract suspend fun findByIdMatchingArea(
         taxonId: Long,
         areaId: Long
