@@ -7,6 +7,7 @@ import android.widget.Button
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import fr.geonature.viewpager.BuildConfig
@@ -65,6 +66,7 @@ abstract class AbstractPagerFragmentActivity : AppCompatActivity(), OnPageFragme
         viewPager = findViewById(R.id.pager)
         viewPager.adapter = adapter
         viewPager.offscreenPageLimit = 1
+        viewPager.reduceDragSensitivity()
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 this@AbstractPagerFragmentActivity.onPageSelected(position)
@@ -110,7 +112,7 @@ abstract class AbstractPagerFragmentActivity : AppCompatActivity(), OnPageFragme
 
         if (currentItem < adapter.itemCount - 1) {
             val pageFragment = getPageFragment(currentItem)
-            if (pageFragment != null || (pageFragment is IPageWithValidationFragment && (pageFragment as IPageWithValidationFragment).validate())) {
+            if (pageFragment !is IPageWithValidationFragment || pageFragment.validate()) {
                 if (BuildConfig.DEBUG) {
                     pageFragmentViewModel.pageFragments.keys
                         .elementAtOrNull(currentItem + 1)
@@ -265,6 +267,32 @@ abstract class AbstractPagerFragmentActivity : AppCompatActivity(), OnPageFragme
             )
 
             null
+        }
+    }
+
+    /**
+     * Makes the horizontal swipe less sensitive, so that a vertical scroll in a nested list is not
+     * hijacked by the pager when the finger slightly drifts horizontally.
+     */
+    private fun ViewPager2.reduceDragSensitivity(factor: Int = 3) {
+        try {
+            val recyclerView = ViewPager2::class.java
+                .getDeclaredField("mRecyclerView")
+                .apply { isAccessible = true }
+                .get(this) as RecyclerView
+            val touchSlopField = RecyclerView::class.java
+                .getDeclaredField("mTouchSlop")
+                .apply { isAccessible = true }
+            touchSlopField.set(
+                recyclerView,
+                (touchSlopField.get(recyclerView) as Int) * factor
+            )
+        } catch (e: Exception) {
+            Log.w(
+                TAG,
+                "reduceDragSensitivity: unable to adjust the touch slop",
+                e
+            )
         }
     }
 
